@@ -100,6 +100,7 @@ export default function Index() {
   const [showTracker, setShowTracker] = useState(false);
   const [orderId] = useState(() => Math.floor(Math.random() * 9000 + 1000).toString());
   const [orderPlaced, setOrderPlaced] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<"card" | "cash">("card");
   const [paymentForm, setPaymentForm] = useState({ name: "", card: "", expiry: "", cvv: "", phone: "", address: "" });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -134,6 +135,7 @@ export default function Index() {
     { id: "menu", label: "Меню" },
     { id: "cart", label: "Корзина" },
     { id: "payment", label: "Оплата" },
+    { id: "delivery", label: "Доставка" },
     { id: "contacts", label: "Контакты" },
   ];
 
@@ -519,51 +521,104 @@ export default function Index() {
                   </div>
                 </div>
 
+                {/* Способ оплаты */}
                 <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-lg p-6">
-                  <h3 className="text-xl text-[hsl(var(--gold))] mb-1" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
-                    Оплата банковской картой
+                  <h3 className="text-xl text-[hsl(var(--gold))] mb-4" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
+                    Способ оплаты
                   </h3>
-                  <p className="text-xs text-[hsl(var(--muted-foreground))] mb-4">Visa, Mastercard, МИР</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { id: "card" as const, icon: "CreditCard", label: "Картой онлайн", sub: "Visa, MC, МИР" },
+                      { id: "cash" as const, icon: "Banknote", label: "Наличными", sub: "При получении" },
+                    ].map(m => (
+                      <button key={m.id} onClick={() => setPaymentMethod(m.id)}
+                        className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all ${
+                          paymentMethod === m.id
+                            ? 'border-[hsl(var(--gold))] bg-[hsl(var(--gold)/0.08)]'
+                            : 'border-[hsl(var(--border))] hover:border-[hsl(var(--gold)/0.4)]'
+                        }`}>
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                          paymentMethod === m.id ? 'bg-[hsl(var(--gold)/0.2)] text-[hsl(var(--gold))]' : 'bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))]'
+                        }`}>
+                          <Icon name={m.icon} size={18} fallback="Circle" />
+                        </div>
+                        <div className="text-center">
+                          <div className={`text-sm font-medium ${paymentMethod === m.id ? 'text-[hsl(var(--gold))]' : 'text-[hsl(var(--cream))]'}`}
+                            style={{ fontFamily: 'Oswald, sans-serif', letterSpacing: '0.5px' }}>
+                            {m.label}
+                          </div>
+                          <div className="text-xs text-[hsl(var(--muted-foreground))]">{m.sub}</div>
+                        </div>
+                        {paymentMethod === m.id && (
+                          <div className="w-4 h-4 rounded-full bg-[hsl(var(--gold))] flex items-center justify-center">
+                            <Icon name="Check" size={10} />
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-xs text-[hsl(var(--muted-foreground))] uppercase tracking-wider mb-2 block" style={{ fontFamily: 'Oswald, sans-serif' }}>
-                        Номер карты
-                      </label>
-                      <input type="text" placeholder="0000 0000 0000 0000" maxLength={19}
-                        value={paymentForm.card}
-                        onChange={e => {
-                          const v = e.target.value.replace(/\D/g, '').replace(/(.{4})/g, '$1 ').trim();
-                          setPaymentForm(p => ({ ...p, card: v }));
-                        }}
-                        className="w-full bg-[hsl(var(--input))] border border-[hsl(var(--border))] rounded px-4 py-3 text-[hsl(var(--cream))] placeholder:text-[hsl(var(--muted-foreground))] focus:outline-none focus:border-[hsl(var(--gold))] transition-colors font-mono tracking-wider" />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
+                {/* Поля карты — только при оплате картой */}
+                {paymentMethod === "card" && (
+                  <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-lg p-6 animate-fade-in">
+                    <p className="text-xs text-[hsl(var(--muted-foreground))] mb-4">Введите данные банковской карты</p>
+                    <div className="space-y-4">
                       <div>
                         <label className="text-xs text-[hsl(var(--muted-foreground))] uppercase tracking-wider mb-2 block" style={{ fontFamily: 'Oswald, sans-serif' }}>
-                          Срок действия
+                          Номер карты
                         </label>
-                        <input type="text" placeholder="MM/ГГ" maxLength={5}
-                          value={paymentForm.expiry}
+                        <input type="text" placeholder="0000 0000 0000 0000" maxLength={19}
+                          value={paymentForm.card}
                           onChange={e => {
-                            let v = e.target.value.replace(/\D/g, '');
-                            if (v.length >= 2) v = v.slice(0, 2) + '/' + v.slice(2);
-                            setPaymentForm(p => ({ ...p, expiry: v }));
+                            const v = e.target.value.replace(/\D/g, '').replace(/(.{4})/g, '$1 ').trim();
+                            setPaymentForm(p => ({ ...p, card: v }));
                           }}
-                          className="w-full bg-[hsl(var(--input))] border border-[hsl(var(--border))] rounded px-4 py-3 text-[hsl(var(--cream))] placeholder:text-[hsl(var(--muted-foreground))] focus:outline-none focus:border-[hsl(var(--gold))] transition-colors font-mono" />
+                          className="w-full bg-[hsl(var(--input))] border border-[hsl(var(--border))] rounded px-4 py-3 text-[hsl(var(--cream))] placeholder:text-[hsl(var(--muted-foreground))] focus:outline-none focus:border-[hsl(var(--gold))] transition-colors font-mono tracking-wider" />
                       </div>
-                      <div>
-                        <label className="text-xs text-[hsl(var(--muted-foreground))] uppercase tracking-wider mb-2 block" style={{ fontFamily: 'Oswald, sans-serif' }}>
-                          CVV
-                        </label>
-                        <input type="password" placeholder="•••" maxLength={3}
-                          value={paymentForm.cvv}
-                          onChange={e => setPaymentForm(p => ({ ...p, cvv: e.target.value.replace(/\D/g, '') }))}
-                          className="w-full bg-[hsl(var(--input))] border border-[hsl(var(--border))] rounded px-4 py-3 text-[hsl(var(--cream))] placeholder:text-[hsl(var(--muted-foreground))] focus:outline-none focus:border-[hsl(var(--gold))] transition-colors font-mono" />
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-xs text-[hsl(var(--muted-foreground))] uppercase tracking-wider mb-2 block" style={{ fontFamily: 'Oswald, sans-serif' }}>
+                            Срок действия
+                          </label>
+                          <input type="text" placeholder="MM/ГГ" maxLength={5}
+                            value={paymentForm.expiry}
+                            onChange={e => {
+                              let v = e.target.value.replace(/\D/g, '');
+                              if (v.length >= 2) v = v.slice(0, 2) + '/' + v.slice(2);
+                              setPaymentForm(p => ({ ...p, expiry: v }));
+                            }}
+                            className="w-full bg-[hsl(var(--input))] border border-[hsl(var(--border))] rounded px-4 py-3 text-[hsl(var(--cream))] placeholder:text-[hsl(var(--muted-foreground))] focus:outline-none focus:border-[hsl(var(--gold))] transition-colors font-mono" />
+                        </div>
+                        <div>
+                          <label className="text-xs text-[hsl(var(--muted-foreground))] uppercase tracking-wider mb-2 block" style={{ fontFamily: 'Oswald, sans-serif' }}>
+                            CVV
+                          </label>
+                          <input type="password" placeholder="•••" maxLength={3}
+                            value={paymentForm.cvv}
+                            onChange={e => setPaymentForm(p => ({ ...p, cvv: e.target.value.replace(/\D/g, '') }))}
+                            className="w-full bg-[hsl(var(--input))] border border-[hsl(var(--border))] rounded px-4 py-3 text-[hsl(var(--cream))] placeholder:text-[hsl(var(--muted-foreground))] focus:outline-none focus:border-[hsl(var(--gold))] transition-colors font-mono" />
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
+                )}
+
+                {paymentMethod === "cash" && (
+                  <div className="bg-[hsl(var(--gold)/0.06)] border border-[hsl(var(--gold)/0.25)] rounded-lg p-5 animate-fade-in flex items-start gap-4">
+                    <div className="w-10 h-10 bg-[hsl(var(--gold)/0.15)] rounded-full flex items-center justify-center text-[hsl(var(--gold))] shrink-0 mt-0.5">
+                      <Icon name="Info" size={18} />
+                    </div>
+                    <div>
+                      <div className="text-[hsl(var(--cream))] font-medium mb-1" style={{ fontFamily: 'Oswald, sans-serif', letterSpacing: '0.5px' }}>
+                        Оплата наличными курьеру
+                      </div>
+                      <p className="text-[hsl(var(--muted-foreground))] text-sm leading-relaxed">
+                        Приготовьте точную сумму или сообщите при оформлении, от какой купюры нужна сдача.
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 <div className="bg-[hsl(var(--card))] border border-[hsl(var(--gold)/0.3)] rounded-lg p-6">
                   <div className="flex justify-between items-center mb-4">
@@ -582,16 +637,104 @@ export default function Index() {
                     </span>
                   </div>
                   <button onClick={handleOrder} className="btn-gold w-full py-4 rounded text-base flex items-center justify-center gap-2">
-                    <Icon name="CreditCard" size={18} />
-                    Оплатить заказ
+                    <Icon name={paymentMethod === "card" ? "CreditCard" : "Banknote"} size={18} />
+                    {paymentMethod === "card" ? "Оплатить картой" : "Заказать (оплата наличными)"}
                   </button>
-                  <p className="text-center text-xs text-[hsl(var(--muted-foreground))] mt-3 flex items-center justify-center gap-1">
-                    <Icon name="Lock" size={11} />
-                    Защищённое соединение SSL
-                  </p>
+                  {paymentMethod === "card" && (
+                    <p className="text-center text-xs text-[hsl(var(--muted-foreground))] mt-3 flex items-center justify-center gap-1">
+                      <Icon name="Lock" size={11} />
+                      Защищённое соединение SSL
+                    </p>
+                  )}
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* ==================== РАЙОНЫ ДОСТАВКИ ==================== */}
+        {activeSection === "delivery" && (
+          <div className="max-w-5xl mx-auto px-4 md:px-8 py-12">
+            <div className="text-center mb-12">
+              <h2 className="text-4xl md:text-5xl text-[hsl(var(--cream))] mb-3" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
+                Районы доставки
+              </h2>
+              <CaucasusOrnament />
+              <p className="text-[hsl(var(--muted-foreground))] mt-4">Доставляем горячим по всему городу — от 45 минут</p>
+            </div>
+
+            {/* Условия */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-12">
+              {[
+                { icon: "Bike", title: "До 5 км", price: "Бесплатно", sub: "При заказе от 1000 ₽", color: "text-[hsl(var(--gold))]" },
+                { icon: "MapPin", title: "5–10 км", price: "150 ₽", sub: "Любая сумма заказа", color: "text-[hsl(var(--cream))]" },
+                { icon: "Clock", title: "Время", price: "45–60 мин", sub: "В часы пик до 75 мин", color: "text-[hsl(var(--cream))]" },
+              ].map((c, i) => (
+                <div key={i} className="dish-card rounded-lg p-6 text-center opacity-0 animate-fade-in"
+                  style={{ animationDelay: `${i * 0.1}s`, animationFillMode: 'forwards' }}>
+                  <div className="w-12 h-12 bg-[hsl(var(--gold)/0.12)] border border-[hsl(var(--gold)/0.3)] rounded-full flex items-center justify-center mx-auto mb-4 text-[hsl(var(--gold))]">
+                    <Icon name={c.icon} size={20} fallback="Circle" />
+                  </div>
+                  <div className="text-[hsl(var(--muted-foreground))] text-xs uppercase tracking-wider mb-1" style={{ fontFamily: 'Oswald, sans-serif' }}>{c.title}</div>
+                  <div className={`text-2xl font-bold mb-1 ${c.color}`} style={{ fontFamily: 'Cormorant Garamond, serif' }}>{c.price}</div>
+                  <div className="text-[hsl(var(--muted-foreground))] text-sm">{c.sub}</div>
+                </div>
+              ))}
+            </div>
+
+            <CaucasusOrnament className="mb-10" />
+
+            {/* Таблица районов */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[
+                { zone: "Зона 1 — Центр", districts: ["Центральный район", "Старый город", "Площадь Ленина", "Набережная"], time: "30–45 мин", delivery: "Бесплатно от 1000 ₽", color: "border-[hsl(var(--gold)/0.5)]" },
+                { zone: "Зона 1 — Запад", districts: ["Западный район", "Парковый", "Заречный", "Берёзовая роща"], time: "35–50 мин", delivery: "Бесплатно от 1000 ₽", color: "border-[hsl(var(--gold)/0.5)]" },
+                { zone: "Зона 2 — Север", districts: ["Северный район", "Новостройки", "Промышленный", "Северная окраина"], time: "45–60 мин", delivery: "150 ₽", color: "border-[hsl(var(--border))]" },
+                { zone: "Зона 2 — Юг", districts: ["Южный район", "Садовый", "Дачный массив", "Южная окраина"], time: "45–60 мин", delivery: "150 ₽", color: "border-[hsl(var(--border))]" },
+              ].map((z, i) => (
+                <div key={i} className={`bg-[hsl(var(--card))] border-2 ${z.color} rounded-lg p-5 opacity-0 animate-fade-in`}
+                  style={{ animationDelay: `${i * 0.12}s`, animationFillMode: 'forwards' }}>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="text-[hsl(var(--gold))] font-semibold" style={{ fontFamily: 'Oswald, sans-serif', letterSpacing: '0.5px' }}>
+                      {z.zone}
+                    </div>
+                    <span className={`text-xs px-2 py-1 rounded ${z.delivery === 'Бесплатно от 1000 ₽' ? 'bg-[hsl(var(--gold)/0.15)] text-[hsl(var(--gold))]' : 'bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))]'}`}>
+                      {z.delivery}
+                    </span>
+                  </div>
+                  <ul className="space-y-1.5 mb-3">
+                    {z.districts.map(d => (
+                      <li key={d} className="flex items-center gap-2 text-[hsl(var(--cream)/0.8)] text-sm">
+                        <div className="w-1.5 h-1.5 rounded-full bg-[hsl(var(--gold)/0.6)] shrink-0" />
+                        {d}
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="flex items-center gap-2 pt-3 border-t border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))] text-xs">
+                    <Icon name="Clock" size={12} />
+                    Время доставки: <span className="text-[hsl(var(--cream))]">{z.time}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Самовывоз */}
+            <div className="mt-8 bg-[hsl(var(--gold)/0.06)] border border-[hsl(var(--gold)/0.25)] rounded-lg p-6 flex flex-col md:flex-row items-center gap-5">
+              <div className="w-14 h-14 bg-[hsl(var(--gold)/0.15)] rounded-full flex items-center justify-center text-[hsl(var(--gold))] shrink-0">
+                <Icon name="Store" size={24} fallback="MapPin" />
+              </div>
+              <div className="flex-1 text-center md:text-left">
+                <div className="text-[hsl(var(--cream))] font-semibold mb-1" style={{ fontFamily: 'Oswald, sans-serif', letterSpacing: '1px' }}>
+                  САМОВЫВОЗ — БЕСПЛАТНО
+                </div>
+                <p className="text-[hsl(var(--muted-foreground))] text-sm">
+                  ул. Шашлычная, д. 1 · Готовим за 20–30 минут · Режим работы: 10:00–23:00
+                </p>
+              </div>
+              <button onClick={() => setActiveSection("payment")} className="btn-gold px-6 py-3 rounded shrink-0">
+                Заказать
+              </button>
+            </div>
           </div>
         )}
 
